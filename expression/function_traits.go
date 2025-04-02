@@ -159,6 +159,7 @@ var deferredFunctions = map[string]struct{}{
 	ast.UnixTimestamp:    {},
 	ast.Curdate:          {},
 	ast.CurrentDate:      {},
+	ast.YesterDay:        {}, // new yesterday: 函数集合
 	ast.UTCDate:          {},
 }
 

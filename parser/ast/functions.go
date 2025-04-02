@@ -118,11 +118,13 @@ const (
 	Truncate = "truncate"
 
 	// time functions
-	AddDate          = "adddate"
-	AddTime          = "addtime"
-	ConvertTz        = "convert_tz"
-	Curdate          = "curdate"
-	CurrentDate      = "current_date"
+	AddDate     = "adddate"
+	AddTime     = "addtime"
+	ConvertTz   = "convert_tz"
+	Curdate     = "curdate"
+	CurrentDate = "current_date"
+	// new yesterday:  函数定义
+	YesterDay        = "yesterday"
 	CurrentTime      = "current_time"
 	CurrentTimestamp = "current_timestamp"
 	Curtime          = "curtime"

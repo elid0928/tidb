@@ -2093,6 +2093,49 @@ func (b *builtinSysDateWithoutFspSig) evalTime(row chunk.Row) (d types.Time, isN
 	return result, false, nil
 }
 
+type yesterdayFunctionClass struct {
+	baseFunctionClass
+}
+
+func (c *yesterdayFunctionClass) getFunction(ctx sessionctx.Context, args []Expression) (builtinFunc, error) {
+	if err := c.verifyArgs(args); err != nil {
+		return nil, err
+	}
+
+	bf, err := newBaseBuiltinFuncWithTp(ctx, c.funcName, args, types.ETDatetime)
+	if err != nil {
+		return nil, err
+	}
+
+	bf.setDecimalAndFlenForDate()
+	sig := &builtinYesterdaySig{bf}
+	return sig, nil
+}
+
+type builtinYesterdaySig struct {
+	baseBuiltinFunc
+}
+
+func (b *builtinYesterdaySig) Clone() builtinFunc {
+
+	newSig := &builtinYesterdaySig{}
+	newSig.cloneFrom(&b.baseBuiltinFunc)
+	return newSig
+}
+
+// evalTime evals CURDATE().
+// See https://dev.mysql.com/doc/refman/5.7/en/date-and-time-functions.html#function_curdate
+func (b *builtinYesterdaySig) evalTime(row chunk.Row) (d types.Time, isNull bool, err error) {
+	tz := b.ctx.GetSessionVars().Location() // 获取当前会话本地时区?
+	nowTs, err := getStmtTimestamp(b.ctx)   // 获取事务时间戳
+	if err != nil {
+		return types.ZeroTime, true, err
+	}
+	year, month, day := nowTs.AddDate(0, 0, -1).In(tz).Date() // 昨天
+	result := types.NewTime(types.FromDate(year, int(month), day, 0, 0, 0, 0), mysql.TypeDate, 0)
+	return result, false, nil
+}
+
 type currentDateFunctionClass struct {
 	baseFunctionClass
 }
@@ -2123,8 +2166,8 @@ func (b *builtinCurrentDateSig) Clone() builtinFunc {
 // evalTime evals CURDATE().
 // See https://dev.mysql.com/doc/refman/5.7/en/date-and-time-functions.html#function_curdate
 func (b *builtinCurrentDateSig) evalTime(row chunk.Row) (d types.Time, isNull bool, err error) {
-	tz := b.ctx.GetSessionVars().Location()
-	nowTs, err := getStmtTimestamp(b.ctx)
+	tz := b.ctx.GetSessionVars().Location() // 获取当前会话本地时区?
+	nowTs, err := getStmtTimestamp(b.ctx)   // 获取事务时间戳
 	if err != nil {
 		return types.ZeroTime, true, err
 	}

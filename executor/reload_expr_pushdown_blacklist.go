@@ -165,6 +165,7 @@ var funcName2Alias = map[string]string{
 	"addtime":                    ast.AddTime,
 	"convert_tz":                 ast.ConvertTz,
 	"curdate":                    ast.Curdate,
+	"yesterday":                  ast.YesterDay, // new yesterday:
 	"current_date":               ast.CurrentDate,
 	"current_time":               ast.CurrentTime,
 	"current_timestamp":          ast.CurrentTimestamp,
