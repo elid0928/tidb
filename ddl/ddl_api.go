@@ -6294,6 +6294,27 @@ func (d *ddl) dropTableObject(
 			return errors.Trace(err)
 		}
 
+		// 如果是表, 这删除权限列
+		if tableObjectType == tableObject {
+			// delete from mysql.tables_priv where table_name = '%s' and db = '%s';
+			exec, ok := ctx.(sqlexec.RestrictedSQLExecutor)
+			if ok {
+				internalCtx := kv.WithInternalSourceType(context.Background(), kv.InternalTxnDDL)
+				sql := "DELETE FROM mysql.tables_priv WHERE table_name = %? AND db = %?"
+				_, _, err := exec.ExecRestrictedSQL(internalCtx, nil, sql, fullti.Name.O, fullti.Schema.O)
+				if err != nil {
+					logutil.BgLogger().Warn("failed to delete table privilege", zap.String("db", fullti.Schema.O), zap.String("table", fullti.Name.O), zap.Error(err))
+				}
+				_, _, err = exec.ExecRestrictedSQL(internalCtx, nil, "FLUSH PRIVILEGES;")
+
+				if err != nil {
+					logutil.BgLogger().Warn("failed to delete table privilege", zap.String("db", fullti.Schema.O), zap.String("table", fullti.Name.O), zap.Error(err))
+				}
+			} else {
+				logutil.BgLogger().Warn("failed to delete table privilege", zap.String("db", fullti.Schema.O), zap.String("table", fullti.Name.O), zap.Error(err))
+			}
+		}
+
 		// unlock table after drop
 		if tableObjectType != tableObject {
 			continue
@@ -6304,6 +6325,7 @@ func (d *ddl) dropTableObject(
 		if ok, _ := ctx.CheckTableLocked(tableInfo.Meta().ID); ok {
 			ctx.ReleaseTableLockByTableIDs([]int64{tableInfo.Meta().ID})
 		}
+
 	}
 	if len(notExistTables) > 0 && !ifExists {
 		return dropExistErr.FastGenByArgs(strings.Join(notExistTables, ","))
